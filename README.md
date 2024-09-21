@@ -1,9 +1,31 @@
-# LOFTune
+# LOFTune-Agent
 
-This repository contains the source code for our paper: **LOFTune: A Low-overhead and Flexible Approach for Spark SQL Configuration Tuning**.
+Implement LOFTune with LLM Agent
 
 # Requirements
 ***
+- langchain-openai
+- langgraph
+- python-dotenv
+
+# Usage
+***
+1. create `.env` file in the root directory and type in `OPENAI_API_KEY=<YOUR OWN API>`.
+
+
+
+
+
+
+
+<!-- This repository contains the source code for our paper: **LOFTune: A Low-overhead and Flexible Approach for Spark SQL Configuration Tuning**.
+
+# Requirements
+***
+- langchain-openai
+- langgraph
+- python-dotenv
+
 - tokenizers 0.11.4
 - optuna 3.5.0
 - quantile-forest 1.1.3
@@ -34,4 +56,4 @@ This repository contains the source code for our paper: **LOFTune: A Low-overhea
 ***
 1. Download datasets
 2. Set mode and workloads in run_tests.sh
-3. Execute run_tests.sh
+3. Execute run_tests.sh -->
