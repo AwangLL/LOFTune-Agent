@@ -1,17 +1,17 @@
-import datetime
-from config.common import cwd
 import os
+import datetime
+import logging.config
+
+from config.common import cwd
 
 BASE_DIR = cwd
 
+# 自动创建目录
 if not os.path.exists(f'{BASE_DIR}/logs/history_tuner/'):
     os.makedirs(f'{BASE_DIR}/logs/history_tuner/')
 
 if not os.path.exists(f'{BASE_DIR}/logs/recommender/'):
     os.makedirs(f'{BASE_DIR}/logs/recommender/')
-
-if not os.path.exists(f'{BASE_DIR}/logs/trainer/'):
-    os.makedirs(f'{BASE_DIR}/logs/trainer/')
 
 LOGGING_CONFIG = {
     'version': 1,
@@ -39,14 +39,6 @@ LOGGING_CONFIG = {
             'maxBytes': 1024 * 1024 * 5,
             'backupCount': 5,
             'formatter': 'standard',
-        },
-        'trainer': {
-            'level': 'INFO',
-            'class': 'logging.handlers.RotatingFileHandler',
-            'filename': f'{BASE_DIR}/logs/trainer/{datetime.date.today()}.log',
-            'maxBytes': 1024 * 1024 * 5,
-            'backupCount': 5,
-            'formatter': 'standard',
         }
     },
     'loggers': {
@@ -60,10 +52,7 @@ LOGGING_CONFIG = {
             'level': 'INFO',
             'propagate': False,
         },
-        'trainer': {
-            'handlers': ['trainer'],
-            'level': 'INFO',
-            'propagate': False,
-        }
     }
 }
+
+logging.config.dictConfig(LOGGING_CONFIG)

@@ -1,11 +1,15 @@
+import copy
 import math
+import logging
 
 from sklearn.model_selection import train_test_split
 from quantile_forest import RandomForestQuantileRegressor
-from util import *
+from config.knob_list import *
+from utils import *
 import numpy as np
 import pandas as pd
 from optuna.samplers import TPESampler
+from optuna.integration import BoTorchSampler
 import optuna
 import random
 
@@ -14,7 +18,7 @@ class PerformanceModel:
     def __init__(self,
                  core_thresholds=(CORE_MIN, CORE_MAX),
                  memory_thresholds=(MEMORY_MIN, MEMORY_MAX),
-                 logger=None,
+                #  logger=None,
                  weights=None):
         self.qrf = None
         self.cal_score = None
@@ -22,7 +26,7 @@ class PerformanceModel:
 
         self.core_thresholds = core_thresholds
         self.memory_thresholds = memory_thresholds
-        self.logger = logger
+        self.logger = logging.getLogger("optimizer")
         self.task_embedding = None
         self.is_minimum = True
         self.is_zero_history = False
@@ -52,14 +56,24 @@ class PerformanceModel:
             X_train, X_cal, y_train, y_cal = train_test_split(X, y, test_size=0.15)
             self.qrf = RandomForestQuantileRegressor(n_jobs=-1, random_state=42)
             self.qrf.fit(X_train, y_train)
+            # 固定训练数据
+            # X = hist_data[KNOBS + embedding_columns].values
+            # y = hist_data['duration'].values
+            # cal_size = math.ceil(0.15 * len(hist_data))
+            # X_cal, X_train = X[:cal_size], X[cal_size:]
+            # y_cal, y_train = y[:cal_size], y[cal_size:]
+            # self.qrf = RandomForestQuantileRegressor(n_jobs=-1)
+            # self.qrf.fit(X_train, y_train)
 
         cal_lower, cal_mean, cal_upper = self.predict_ci(X_cal)
         n = len(y_cal)
         self.cal_score = np.maximum(cal_lower - y_cal, y_cal - cal_upper)
+        # 防止n ≤ 10时出现分位数 > 1的情况
         self.q_hat = np.quantile(self.cal_score, min(1, np.ceil((n + 1) * (1 - alpha)) / n), method='higher')
 
         self.logger.info(f"Model train finished using {len(X_train)} records with {len(X_cal)} calibrations.")
 
+    # 预测置信区间和值
     def predict_ci(self, data):
         if data.ndim == 1:
             data = data.reshape(1, -1)
@@ -67,6 +81,7 @@ class PerformanceModel:
         pred_upper = np.maximum(pred_upper, pred_lower + 1e-6)
         return pred_lower, pred_mean, pred_upper
 
+    # 预测值
     def predict(self, data):
         if data.ndim == 1:
             data = data.reshape(1, -1)
@@ -85,7 +100,7 @@ class PerformanceModel:
                 v = trial.suggest_categorical(key, [_ for _ in range(0, len(details['candidates']))])
             elif knob_type == KnobType.INTEGER:
                 min_value, max_value, step_length = details['range'][0: 3]
-                v = trial.suggest_int(key, min_value, max_value, step_length)
+                v = trial.suggest_int(key, min_value, max_value, step=step_length)
             elif knob_type == KnobType.NUMERIC:
                 min_value, max_value, step_length = details['range'][0: 3]
                 v = round(trial.suggest_float(key, min_value, max_value, step=step_length), 3)
@@ -100,14 +115,17 @@ class PerformanceModel:
 
         if self.is_minimum:
             out = -self.predict(sample)[0]
+            # print(f"Trial, values = {tmp}, out = {out}")
         else:
             pred_lower, pred_mean, pred_upper = self.predict_ci(sample)
             pred_lower, pred_mean, pred_upper = pred_lower[0], pred_mean[0], pred_upper[0]
             out = (pred_upper + self.q_hat) / (pred_lower - self.q_hat)
+            # print(f"Trial, values = {tmp}, upper = {pred_upper}, lower = {pred_lower}, q_hat = {self.q_hat}, out = {out}")
         return out
 
     def resource_constraint(self, trial):
         total_cores, total_memory = get_resource_usage_of_config(trial.params)
+        # 可行域是≤0
         c0 = self.core_thresholds[0] - total_cores
         c1 = total_cores - self.core_thresholds[1]
         m1 = self.memory_thresholds[0] - total_memory

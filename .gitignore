@@ -1,4 +1,7 @@
 .env
+result
+data/*/all_history_data.csv
+data/*/bert_history_data.csv
 
 ############################################
 ############# Github Generated #############

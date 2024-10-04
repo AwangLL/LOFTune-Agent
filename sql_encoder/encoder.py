@@ -1,54 +1,27 @@
-import os
-from tokenizers import Tokenizer
+from typing import List
 
-from sql_encoder.data_utils.ast_parser import ASTParser
-from sql_encoder.model.tbcnn_encoder import TBCNNEncoder
-from sql_encoder.data_utils.tensor_util import *
+import torch
+from transformers import BertModel, BertTokenizer
+
 from config.encoder_config import *
 
+tokenizer = None
+model = None
 
-class SQLEncoder:
-    def __init__(self):
-        self.type_vocab = Tokenizer.from_file(data_path['node_type_vocab_model_path'])
-        self.token_vocab = Tokenizer.from_file(data_path['node_token_vocab_model_path'])
+def encode_sql(query: str) -> List[float]:
+    if encoding_model == 'bert':
+        global tokenizer
+        global model
+        if tokenizer is None:
+            tokenizer = BertTokenizer.from_pretrained('bert-base-uncased', clean_up_tokenization_spaces=False)
+            model = BertModel.from_pretrained('bert-base-uncased')
 
-        self.ast_parser = ASTParser(type_vocab=self.type_vocab, token_vocab=self.token_vocab)
-
-        self.encoder_checkpoint_file_path = train_config['encoder_checkpoint_file_path']
-
-        encoder_config['num_types'] = self.type_vocab.get_vocab_size()
-        encoder_config['num_tokens'] = self.token_vocab.get_vocab_size()
-
-        self.device = device
-
-        self.encoder = TBCNNEncoder(encoder_config).to(self.device)
-
-    def load_encoder(self):
-        if not os.path.exists(self.encoder_checkpoint_file_path):
-            return False
-        checkpoint = torch.load(self.encoder_checkpoint_file_path, map_location=self.device)
-        self.encoder.load_state_dict(checkpoint['model_state_dict'])
-        return True
-
-    def sqls_to_tensors(self, batch_sql_snippets):
-        batch_tree_indexes = []
-        for sql_snippet in batch_sql_snippets:
-            ast = self.ast_parser.parse(sql_snippet)
-            tree_representation, _ = self.ast_parser.simplify_ast(ast, sql_snippet)
-            tree_indexes = transform_tree_to_index(tree_representation, _)
-            batch_tree_indexes.append(tree_indexes)
-
-        tensors = trees_to_batch_tensors(batch_tree_indexes)
-        return tensors
-
-    def encode(self, sqls):
-        tensors = self.sqls_to_tensors(sqls)
-        self.encoder.eval()
+        inputs = tokenizer(query, return_tensors='pt', padding=True, truncation=True, max_length=512)
         with torch.no_grad():
-            batch_node_type = torch.tensor(tensors["batch_node_type_id"]).to(self.device)
-            batch_node_tokens = torch.tensor(tensors["batch_node_tokens_id"]).to(self.device)
-            batch_children_index = torch.tensor(tensors["batch_children_index"]).to(self.device)
-            code_vector, _ = self.encoder(batch_node_type, batch_node_tokens, batch_children_index)
+            outputs = model(**inputs)
+        last_hidden_states = outputs.last_hidden_state
+        cls_embedding = last_hidden_states[0, 0, :].numpy()
 
-        return code_vector
-
+        return cls_embedding.tolist()
+    else:
+        raise NotImplementedError

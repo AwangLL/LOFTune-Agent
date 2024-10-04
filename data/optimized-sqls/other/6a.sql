@@ -1,0 +1,13 @@
+SELECT
+  MIN(k.keyword) AS movie_keyword,
+  MIN(n.name) AS actor_name,
+  MIN(t.title) AS marvel_movie
+FROM cast_info AS ci
+JOIN name AS n
+  ON ci.person_id = n.id AND n.name LIKE '%Downey%Robert%'
+JOIN title AS t
+  ON ci.movie_id = t.id AND t.production_year > 2010
+JOIN movie_keyword AS mk
+  ON ci.movie_id = mk.movie_id AND mk.movie_id = t.id
+JOIN keyword AS k
+  ON k.id = mk.keyword_id AND k.keyword = 'marvel-cinematic-universe'

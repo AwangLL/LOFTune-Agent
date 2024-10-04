@@ -4,10 +4,29 @@ Implement LOFTune with LLM Agent
 
 # Requirements
 ***
-- langchain-openai
+- python 3.10.2
+- **agent**
 - langgraph
+- langchain
+- langchain-openai
+- langchain-community
 - python-dotenv
-
+- **sql encoder**
+- torch 1.12.1
+- tree-sitter 0.20.1
+- sqlglot 1.16.1
+- transformer
+- **regression model**
+- optuna 3.5.0
+- quantile-forest 1.1.3
+- scikit-learn 1.0.2
+- **mysql**
+- sqlalchemy 1.4.22
+- sqlahchemy-utils 0.41.1
+- pymysql 1.0.3
+- pandas 2.0.3
+- **spark**
+- hdfs
 # Usage
 ***
 1. create `.env` file in the root directory and type in `OPENAI_API_KEY=<YOUR OWN API>`.

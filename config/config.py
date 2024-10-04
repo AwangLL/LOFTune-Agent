@@ -1,16 +1,21 @@
-workload = 'TPCDS'
-data_size = 100
-mode = 'single'
-encoding_model = 'tbcnn'  # 'tbcnn'/'bert'/'tuneful'/'rover'/'random'
+from typing import Annotated, Literal
+
+
+workload: Literal['TPCDS', 'TPCH', 'IMDB'] = 'IMDB'
+data_size: int = 10
+mode: Literal['single', 'multi'] = 'single'
+encoding_model: Literal['tbcnn', 'bert'] = 'bert'
 task_suffix = ''
 
-hdfs_path = "hdfs_ip:port"
-event_log_hdfs_path = "event-log-hdfs-path"
+hdfs_path = 'http://10.214.151.183:9870'
+event_log_hdfs_path = '/home/yjh/spark_tune/environment/spark-3.2.4/log'
 
-alpha = 0.1
-rate_tradeoff = 0.4
+alpha: float = 0.1
+rate_tradeoff: float = 0.4
 
-db_user = 'user'
-db_password = 'password'
-db_host = 'localhost'
-db_port = '3306'
+db_host: str = 'localhost'
+db_port: str = '3306'
+db_username: str = 'root'
+db_password: str = '123456'
+
+simulator = True

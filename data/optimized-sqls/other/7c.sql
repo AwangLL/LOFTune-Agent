@@ -1,0 +1,36 @@
+SELECT
+  MIN(n.name) AS cast_member_name,
+  MIN(pi.info) AS cast_member_info
+FROM aka_name AS an
+JOIN cast_info AS ci
+  ON an.person_id = ci.person_id
+  AND ci.movie_id = ml.linked_movie_id
+  AND ci.movie_id = t.id
+  AND ci.person_id = n.id
+  AND ci.person_id = pi.person_id
+JOIN info_type AS it
+  ON it.id = pi.info_type_id AND it.info = 'mini biography'
+JOIN link_type AS lt
+  ON lt.id = ml.link_type_id
+  AND lt.link IN ('featured in', 'features', 'referenced in', 'references')
+JOIN movie_link AS ml
+  ON ml.linked_movie_id = t.id
+JOIN name AS n
+  ON an.person_id = n.id
+  AND (
+    n.gender = 'f' OR n.gender = 'm'
+  )
+  AND (
+    n.gender = 'm' OR n.name LIKE 'A%'
+  )
+  AND n.id = pi.person_id
+  AND n.name_pcode_cf <= 'F'
+  AND n.name_pcode_cf >= 'A'
+JOIN person_info AS pi
+  ON NOT pi.note IS NULL AND an.person_id = pi.person_id
+JOIN title AS t
+  ON t.production_year <= 2010 AND t.production_year >= 1980
+WHERE
+  NOT an.name IS NULL AND (
+    an.name LIKE '%a%' OR an.name LIKE 'A%'
+  )
