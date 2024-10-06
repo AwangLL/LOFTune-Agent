@@ -8,8 +8,8 @@ def main():
 
     graph = init_graph()
 
-    user_input = "Recommend: 1a"
-    # user_input = "Update: SELECT * FROM user_info"
+    # user_input = "Recommend: 1a"
+    user_input = "Update: 1a"
     events = graph.stream(
         {"messages": ("user", user_input)}, stream_mode="values"
     )
