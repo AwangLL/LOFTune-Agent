@@ -5,6 +5,7 @@ from langgraph.prebuilt import ToolNode, tools_condition
 
 from agent.assistant import Assistant, State
 from agent.tools import KnowledgeBaseRecommender, KnowledgeBaseUpdater
+from agent.tools.retriever import get_task_config
 
 def init_graph():
     llm = ChatOpenAI(temperature=0)
@@ -24,7 +25,7 @@ def init_graph():
         ]
     )
 
-    tools = [KnowledgeBaseRecommender(), KnowledgeBaseUpdater()]
+    tools = [KnowledgeBaseRecommender(), KnowledgeBaseUpdater(), get_task_config]
     assistant_runnable = assistant_prompt | llm.bind_tools(tools)
 
     graph_builder = StateGraph(State)
